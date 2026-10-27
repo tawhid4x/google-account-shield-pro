@@ -1,0 +1,5 @@
+.gmas-vault-menu {
+    max-height: 360px;
+    overflow-y: auto;
+    scroll-behavior: smooth;
+}
