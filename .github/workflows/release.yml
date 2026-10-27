@@ -1,0 +1,15 @@
+name: Release
+on:
+  push:
+    branches: [main]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v3
+      - run: node scripts/build-zip.js
+      - uses: softprops/action-gh-release@v1
+        with:
+          files: google-multi-account-shield-extension.zip
