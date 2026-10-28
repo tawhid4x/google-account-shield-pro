@@ -1,8 +1,16 @@
 <!DOCTYPE html>
 <html>
-<head><link rel="stylesheet" href="popup.css"></head>
+<head>
+  <meta charset="utf-8">
+  <link rel="stylesheet" href="popup.css">
+</head>
 <body>
-    <div id="app"></div>
-    <script src="popup.js" type="module"></script>
+  <canvas id="canvas3d" width="360" height="300" style="position:absolute; top:0; left:0; z-index:-1;"></canvas>
+  <script src="../shared/interactive-3d-core.js" type="module"></script>
+  <script type="module">
+    import { Interactive3DCore } from '../shared/interactive-3d-core.js';
+    const canvas = document.getElementById('canvas3d');
+    if (canvas) new Interactive3DCore(canvas);
+  </script>
 </body>
 </html>

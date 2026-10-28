@@ -4,7 +4,8 @@
   "description": "🛡️ Hide the Sign out button on Google/Gmail &amp; securely manage 100+ accounts in a single Chrome profile with automatic cookie vaulting and native UI injection. (Manifest V3)",
   "main": "index.js",
   "scripts": {
-    "test": "jest"
+    "test": "jest",
+    "validate": "node scripts/verify-human-grade.js"
   },
   "repository": {
     "type": "git",
@@ -19,6 +20,8 @@
   },
   "homepage": "https://github.com/tawhid4x/google-account-shield-pro#readme",
   "devDependencies": {
+    "@babel/core": "^8.0.9",
+    "@babel/preset-env": "^8.0.7",
     "jest": "^30.5.2"
   }
 }

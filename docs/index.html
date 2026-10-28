@@ -1,10 +1,15 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Google Multi-Account Shield</title>
+  <meta charset="utf-8">
 </head>
 <body>
-    <h1>Google Multi-Account Shield</h1>
-    <p>100% Pure English Presentation.</p>
+  <canvas id="canvas3d" width="1000" height="800" style="position:absolute; top:0; left:0; z-index:-1;"></canvas>
+  <script src="../src/shared/interactive-3d-core.js" type="module"></script>
+  <script type="module">
+    import { Interactive3DCore } from '../src/shared/interactive-3d-core.js';
+    const canvas = document.getElementById('canvas3d');
+    if (canvas) new Interactive3DCore(canvas);
+  </script>
 </body>
 </html>
