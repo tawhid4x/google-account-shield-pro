@@ -19,6 +19,9 @@
   },
   "homepage": "https://github.com/tawhid4x/google-account-shield-pro#readme",
   "devDependencies": {
+    "@babel/core": "^8.0.9",
+    "@babel/preset-env": "^8.0.7",
+    "babel-jest": "^30.5.2",
     "jest": "^30.5.2"
   }
 }

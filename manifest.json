@@ -3,7 +3,7 @@
   "name": "Google Multi-Account Shield & Unlimited Account Vault",
   "short_name": "Google Account Shield",
   "version": "1.0.0",
-  "description": "Automatically hides the 'Sign out of all accounts' button and lets you seamlessly scroll & switch 200+ Google accounts inside native menus.",
+  "description": "Automatically hides the 'Sign out of all accounts' button and lets you smoothly scroll & switch 200+ Google accounts inside native menus.",
   "permissions": [
     "cookies",
     "storage",
@@ -14,6 +14,7 @@
   ],
   "host_permissions": [
     "*://*.google.com/*",
+    "*://ogs.google.com/*",
     "*://accounts.google.com/*",
     "*://mail.google.com/*",
     "*://*.youtube.com/*",
@@ -29,6 +30,7 @@
     {
       "matches": [
         "*://*.google.com/*",
+        "*://ogs.google.com/*",
         "*://accounts.google.com/*",
         "*://*.youtube.com/*",
         "*://mail.google.com/*"
