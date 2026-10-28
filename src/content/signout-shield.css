@@ -1,5 +1,4 @@
-html[data-gmas-hide-signout="true"] a[href*="Logout"],
-html[data-gmas-hide-signout="true"] a[href*="SignOutOptions"] {
+html[data-gmas-hide-signout="true"] [data-gmas-signout-hidden="true"] {
     display: none !important;
     visibility: hidden !important;
     pointer-events: none !important;

@@ -3,3 +3,20 @@
     overflow-y: auto;
     scroll-behavior: smooth;
 }
+
+.gmas-status-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 6px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 500;
+    margin-left: 8px;
+    background: rgba(0, 0, 0, 0.05);
+}
+
+@media (prefers-color-scheme: dark) {
+    .gmas-status-badge {
+        background: rgba(255, 255, 255, 0.1);
+    }
+}
