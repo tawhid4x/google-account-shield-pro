@@ -1,4 +1,11 @@
-export class OmniCommandBar {
+(() => {
+"use strict";
+const GUARD_KEY = "__gmas_content_loaded_omni_command_bar";
+if (window[GUARD_KEY]) return;
+window[GUARD_KEY] = true;
+window.__GMAS_SHARED__ = window.__GMAS_SHARED__ || {};
+
+window.__GMAS_SHARED__.OmniCommandBar = class OmniCommandBar {
     constructor() {
         this.container = null;
         this.input = null;
@@ -119,3 +126,4 @@ export class OmniCommandBar {
         }
     }
 }
+})();

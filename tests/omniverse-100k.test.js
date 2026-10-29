@@ -1,6 +1,5 @@
 import { BinarySearchIndex } from '../src/shared/binary-search-index.js';
 import { SelfDoctor } from '../src/background/self-doctor.js';
-import { SeamlessStatePreserver } from '../src/content/seamless-state-preserver.js';
 
 test('Omniverse 100k Benchmark: BinarySearchIndex', () => {
     const index = new BinarySearchIndex();
@@ -74,17 +73,25 @@ test('Omniverse 100k Benchmark: State Preserver', () => {
         body: { appendChild: jest.fn() }
     };
     const mockStorage = {};
-    global.sessionStorage = {
-        setItem: (k, v) => mockStorage[k] = v,
+    delete window.location;
+    window.location = { hostname: 'youtube.com' };
+    window.scrollTo = jest.fn();
+    Object.defineProperty(window, 'sessionStorage', {
+      value: {
+        setItem: (k, v) => { mockStorage[k] = v; },
         getItem: (k) => mockStorage[k],
-        removeItem: (k) => delete mockStorage[k]
-    };
+        removeItem: (k) => { delete mockStorage[k]; }
+      }
+    });
+
+    require('../src/content/seamless-state-preserver.js');
+    const Preserver = window.__GMAS_SHARED__.SeamlessStatePreserver;
 
     let iterations = 25000;
     for(let i=0; i<iterations; i++) {
-        SeamlessStatePreserver.captureState();
+        Preserver.captureState();
         expect(mockStorage['__gmas_transient_state']).toBeDefined();
-        SeamlessStatePreserver.restoreState();
+        Preserver.restoreState();
         expect(mockStorage['__gmas_transient_state']).toBeUndefined();
     }
 });
