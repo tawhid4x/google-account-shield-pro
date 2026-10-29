@@ -1,10 +1,4 @@
-html[data-gmas-hide-signout="true"] a[href*="Logout"],
-html[data-gmas-hide-signout="true"] a[href*="SignOutOptions"] {
-    display: none !important;
-    visibility: hidden !important;
-    pointer-events: none !important;
-    height: 0 !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    overflow: hidden !important;
+html[data-gmas-hide-signout="true"] a[href*="/Logout"],
+html[data-gmas-hide-signout="true"] a[href*="accounts.google.com/Logout"] {
+  display: none !important;
 }

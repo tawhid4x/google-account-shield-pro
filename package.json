@@ -4,7 +4,7 @@
   "description": "🛡️ Hide the Sign out button on Google/Gmail &amp; securely manage 100+ accounts in a single Chrome profile with automatic cookie vaulting and native UI injection. (Manifest V3)",
   "main": "index.js",
   "scripts": {
-    "test": "jest",
+    "test": "NODE_OPTIONS=--experimental-vm-modules jest",
     "validate": "node scripts/verify-human-grade.js"
   },
   "repository": {
@@ -22,6 +22,7 @@
   "devDependencies": {
     "@babel/core": "^8.0.9",
     "@babel/preset-env": "^8.0.7",
-    "jest": "^30.5.2"
+    "jest": "^30.5.2",
+    "jsdom": "^29.1.1"
   }
 }

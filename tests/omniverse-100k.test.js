@@ -1,79 +1,159 @@
-const { BinarySearchIndex } = require('../src/shared/binary-search-index.js');
-const { VaultCloner } = require('../src/shared/vault-cloner.js');
-const crypto = require('crypto');
+const fs = require('fs');
+const path = require('path');
+const vm = require('vm');
+const url = require('url');
 
-// Polyfill for WebCrypto in Jest for testing VaultCloner
-if (typeof window === 'undefined') {
-    global.window = {};
-}
-if (!window.crypto) {
-    window.crypto = {
-        getRandomValues: (buffer) => {
-            return crypto.randomFillSync(buffer);
-        },
-        subtle: crypto.webcrypto.subtle
-    };
-}
+describe('Agentic Mission Real Validations', () => {
+    test('Mission 1: Multi-Script Global Scope Collision Test', () => {
+        const contentDir = path.join(__dirname, '../src/content');
+        const files = fs.readdirSync(contentDir).filter(f => f.endsWith('.js'));
+        let combinedCode = '';
+        files.forEach(f => {
+            combinedCode += fs.readFileSync(path.join(contentDir, f), 'utf8') + '\n';
+        });
 
-describe('Omniverse Apex 100,000-Iteration Formal Verification', () => {
+        // Use a mocked window context
+        const context = vm.createContext({
+            window: { __GMAS_SHARED__: {}, addEventListener: () => {} },
+            document: {
+                documentElement: {
+                    setAttribute: () => {}, getAttribute: () => {}, appendChild: () => {}
+                },
+                body: { appendChild: () => {} },
+                createElement: () => ({
+                    id: '',
+                    className: '',
+                    attachShadow: () => ({
+                        appendChild: () => {},
+                        getElementById: () => ({ addEventListener: () => {}, focus: () => {}, value: '', classList: { add: () => {}, remove: () => {} } })
+                    }),
+                    addEventListener: () => {},
+                    appendChild: () => {},
+                    style: {}
+                }),
+                querySelectorAll: () => [],
+                readyState: 'complete',
+                addEventListener: () => {}
+            },
+            MutationObserver: class { observe() {} },
+            Node: { ELEMENT_NODE: 1 },
+            console: console,
+            chrome: { runtime: { sendMessage: () => Promise.resolve(), onMessage: { addListener: () => {} } } },
+            sessionStorage: { setItem: () => {}, getItem: () => {}, removeItem: () => {} },
+            requestAnimationFrame: (cb) => cb()
+        });
 
-    test('25,000x Binary/Trigram Fuzzy Search & Ranking', () => {
-        const index = new BinarySearchIndex();
-        for(let i=0; i<500; i++) {
-            index.addAccount({ name: `User ${i}`, email: `user${i}@gmail.com` });
-        }
-
-        for (let i = 0; i < 25000; i++) {
-            const results = index.search('use');
-            expect(results.length).toBeGreaterThan(0);
-        }
+        expect(() => {
+            vm.runInContext(combinedCode, context);
+        }).not.toThrow();
     });
 
-    test('25,000x Atomic Cookie Jar Scrubbing (Mocked)', () => {
-        for (let i = 0; i < 25000; i++) {
-            const scrubbed = true;
-            expect(scrubbed).toBe(true);
-        }
+    test('Mission 2: Exact Google Account Menu DOM Shield Test', () => {
+        const scriptCode = fs.readFileSync(path.join(__dirname, '../src/content/signout-shield.js'), 'utf8');
+
+        let observerCb = null;
+        let elementsHidden = [];
+        let documentHtml = {
+            'data-gmas-hide-signout': 'true'
+        };
+
+        const mockEls = [
+            { textContent: 'Manage your Google Account', getAttribute: () => null, parentElement: null, querySelectorAll: () => [], getBoundingClientRect: () => ({ height: 20 }), style: { setProperty: (k, v) => elementsHidden.push('manage') }, hasAttribute: () => false, setAttribute: () => {} },
+            { textContent: 'MD. TAWHID HOSSAIN official.mdtawhidhossain@gmail.com', getAttribute: () => null, parentElement: null, querySelectorAll: () => [], getBoundingClientRect: () => ({ height: 40 }), style: { setProperty: (k, v) => elementsHidden.push('account1') }, hasAttribute: () => false, setAttribute: () => {} },
+            { textContent: '+ Add another account', getAttribute: () => null, parentElement: null, querySelectorAll: () => [], getBoundingClientRect: () => ({ height: 30 }), style: { setProperty: (k, v) => elementsHidden.push('addaccount') }, hasAttribute: () => false, setAttribute: () => {}, querySelector: () => null },
+            { textContent: 'Sign out of all accounts', getAttribute: () => null, parentElement: null, querySelectorAll: () => [], getBoundingClientRect: () => ({ height: 30 }), style: { setProperty: (k, v) => elementsHidden.push('signout') }, hasAttribute: () => false, setAttribute: () => {}, querySelector: () => null }
+        ];
+
+        const context = vm.createContext({
+            window: { __GMAS_SHARED__: {}, addEventListener: () => {} },
+            document: {
+                documentElement: {
+                    setAttribute: (k, v) => documentHtml[k] = v,
+                    getAttribute: (k) => documentHtml[k]
+                },
+                body: { appendChild: () => {} },
+                querySelectorAll: (q) => mockEls,
+                readyState: 'complete',
+                addEventListener: () => {}
+            },
+            MutationObserver: class {
+                constructor(cb) { observerCb = cb; }
+                observe() {}
+            },
+            Node: { ELEMENT_NODE: 1 },
+            console: console,
+            chrome: { runtime: { sendMessage: () => Promise.resolve() } },
+            requestAnimationFrame: (cb) => cb()
+        });
+
+        vm.runInContext(scriptCode, context);
+        if (observerCb) observerCb();
+
+        expect(elementsHidden).toContain('signout');
+        expect(elementsHidden).not.toContain('manage');
+        expect(elementsHidden).not.toContain('account1');
+        expect(elementsHidden).not.toContain('addaccount');
     });
 
-    test('25,000x Seamless DOM State Preservation & URL Sanitizer Chaos', () => {
-        for (let i = 0; i < 25000; i++) {
-            const statePreserved = true;
-            expect(statePreserved).toBe(true);
-        }
-    });
+    test('Mission 3: myaccount.google.com Redirect Bouncer Test', () => {
+        const swCode = fs.readFileSync(path.join(__dirname, '../src/background/service-worker.js'), 'utf8');
+        const cleanCode = swCode.replace(/import .*/g, '');
 
-    test('25,000x Zero-Trust Security Fortress & Vault Cloner Cryptography', async () => {
-        const data = [{ email: 'test@test.com' }];
-        const pass = 'password123';
+        let redirectedUrl = null;
+        let listeners = {};
 
-        let exported;
-        try {
-            // Need to mock CompressionStream which is not in node
-            global.CompressionStream = class { constructor() {} };
-            global.DecompressionStream = class { constructor() {} };
-            global.Blob = class {
-                constructor(arr) { this.arr = arr; }
-                stream() {
-                    return { pipeThrough: () => this.arr[0] };
+        const context = vm.createContext({
+            URL: url.URL,
+            chrome: {
+                runtime: {
+                    onInstalled: { addListener: () => {} },
+                    onMessage: { addListener: () => {} }
+                },
+                tabs: {
+                    onUpdated: { addListener: (cb) => listeners.onUpdated = cb },
+                    update: (tabId, opts) => redirectedUrl = opts.url
+                },
+                storage: {
+                    local: {
+                        get: (keys, cb) => cb({ lastReturnUrl: 'https://www.google.com/' })
+                    }
                 }
-            };
-            global.Response = class {
-                constructor(obj) { this.obj = obj; }
-                async arrayBuffer() { return Buffer.from(this.obj); }
-                async text() { return this.obj.toString(); }
-            };
+            }
+        });
 
-            exported = await VaultCloner.exportVault(data, pass);
-            const imported = await VaultCloner.importVault(exported, pass);
-            expect(imported[0].email).toBe('test@test.com');
-        } catch (e) {
-            // If polyfills fail, we just pass the 25k iteration assertions
-        }
+        vm.runInContext(cleanCode, context);
 
-        for (let i = 0; i < 25000; i++) {
-            const cryptoVerified = true;
-            expect(cryptoVerified).toBe(true);
-        }
+        // Trigger the bounce
+        listeners.onUpdated(1, {}, { url: 'https://myaccount.google.com/u/1/?utm_source=sign_in_no_continue&pli=1' });
+
+        expect(redirectedUrl).toBe('https://www.google.com/?authuser=1');
+    });
+
+    test('Mission 4: Default Toggles & Auto-Harvest Test', () => {
+        const swCode = fs.readFileSync(path.join(__dirname, '../src/background/service-worker.js'), 'utf8');
+        const cleanCode = swCode.replace(/import .*/g, '');
+        let installedCb = null;
+        let setValues = null;
+        const context = vm.createContext({
+            chrome: {
+                runtime: {
+                    onInstalled: { addListener: (cb) => installedCb = cb },
+                    onMessage: { addListener: () => {} }
+                },
+                tabs: { onUpdated: { addListener: () => {} } },
+                storage: {
+                    local: {
+                        get: (keys, cb) => cb({}),
+                        set: (vals) => setValues = vals
+                    }
+                }
+            }
+        });
+        vm.runInContext(cleanCode, context);
+        if (installedCb) installedCb();
+
+        expect(setValues.hideSignout).toBe(true);
+        expect(setValues.unlimitedVault).toBe(true);
+        expect(setValues.autoEvict).toBe(true);
     });
 });

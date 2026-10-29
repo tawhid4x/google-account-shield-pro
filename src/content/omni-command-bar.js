@@ -1,4 +1,12 @@
-export class OmniCommandBar {
+(() => {
+  'use strict';
+  const GUARD_KEY = '__gmas_content_loaded_omni_command_bar_js';
+  if (window[GUARD_KEY]) return;
+  window[GUARD_KEY] = true;
+
+  window.__GMAS_SHARED__ = window.__GMAS_SHARED__ || {};
+
+  class OmniCommandBar {
     constructor() {
         this.container = document.createElement('div');
         this.shadow = this.container.attachShadow({ mode: 'closed' });
@@ -189,3 +197,9 @@ if (document.readyState === 'loading') {
 } else {
     new OmniCommandBar();
 }
+
+  // Assign classes to shared if needed
+  if (typeof SeamlessStatePreserver !== 'undefined') window.__GMAS_SHARED__.SeamlessStatePreserver = SeamlessStatePreserver;
+  if (typeof OmniCommandBar !== 'undefined') window.__GMAS_SHARED__.OmniCommandBar = OmniCommandBar;
+
+})();

@@ -1,4 +1,12 @@
-export class SeamlessStatePreserver {
+(() => {
+  'use strict';
+  const GUARD_KEY = '__gmas_content_loaded_seamless_state_preserver_js';
+  if (window[GUARD_KEY]) return;
+  window[GUARD_KEY] = true;
+
+  window.__GMAS_SHARED__ = window.__GMAS_SHARED__ || {};
+
+  class SeamlessStatePreserver {
     static captureState() {
         const state = {
             scrollX: window.scrollX,
@@ -115,3 +123,9 @@ chrome.runtime.onMessage.addListener((msg) => {
         SeamlessStatePreserver.captureState();
     }
 });
+
+  // Assign classes to shared if needed
+  if (typeof SeamlessStatePreserver !== 'undefined') window.__GMAS_SHARED__.SeamlessStatePreserver = SeamlessStatePreserver;
+  if (typeof OmniCommandBar !== 'undefined') window.__GMAS_SHARED__.OmniCommandBar = OmniCommandBar;
+
+})();
