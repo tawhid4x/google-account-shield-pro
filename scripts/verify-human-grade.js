@@ -29,7 +29,7 @@ walkDir(path.join(__dirname, '..'), (filePath) => {
         for (const termB64 of aiTermsB64) {
             const term = Buffer.from(termB64, 'base64').toString('utf8').toLowerCase();
             if (content.includes(term)) {
-                console.error(`Violation found in ${filePath}: contains banned terminology`);
+                console.error(`Violation found in ${filePath}: contains banned terminology (${term})`);
                 failed = true;
             }
         }
