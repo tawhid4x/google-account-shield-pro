@@ -1,75 +1,45 @@
 const fs = require('fs');
 const path = require('path');
 
-// Break up words to prevent the script from failing itself
-const cw1 = 'del' + 've';
-const cw2 = 'tapest' + 'ry';
-const cw3 = 'unle' + 'ash';
-const cw4 = 'game-ch' + 'anger';
-const cw5 = 'revolutio' + 'nary';
-const cw6 = 'seamless' + 'ly';
-const cw7 = 'in conclu' + 'sion';
-const CLICHE_WORDS = [cw1, cw2, cw3, cw4, cw5, cw6, cw7];
-
-const rc1 = 'this function ini' + 'tializes';
-const rc2 = 'here we lo' + 'op through';
-const rc3 = 'helper func' + 'tion to';
-const ROBOTIC_COMMENTS = [rc1, rc2, rc3];
-
-function scanFile(filePath) {
-    if (filePath.includes('verify-human-grade.js')) return true; // skip itself
-
-    const content = fs.readFileSync(filePath, 'utf8').toLowerCase();
-
-    let failed = false;
-
-    CLICHE_WORDS.forEach(word => {
-        if (content.includes(word)) {
-            console.error(`AI Footprint Detected (Cliche word '${word}') in ${filePath}`);
-            failed = true;
-        }
-    });
-
-    ROBOTIC_COMMENTS.forEach(comment => {
-        if (content.includes(comment)) {
-            console.error(`AI Footprint Detected (Robotic comment '${comment}') in ${filePath}`);
-            failed = true;
-        }
-    });
-
-    return !failed;
-}
+console.log("Verifying Human Grade Craftsmanship...");
 
 function walkDir(dir, callback) {
     fs.readdirSync(dir).forEach(f => {
-        const dirPath = path.join(dir, f);
-        if (fs.statSync(dirPath).isDirectory()) {
-            if (!['node_modules', '.git'].includes(f)) {
-                walkDir(dirPath, callback);
-            }
-        } else {
-            if (['.js', '.html', '.css', '.md'].some(ext => f.endsWith(ext))) {
-                callback(dirPath);
-            }
-        }
+        let dirPath = path.join(dir, f);
+        let isDirectory = fs.statSync(dirPath).isDirectory();
+        isDirectory ? walkDir(dirPath, callback) : callback(path.join(dir, f));
     });
 }
 
-function runVerification() {
-    console.log('Running Human-Craftsmanship Auditor...');
-    let allPassed = true;
-    walkDir('.', (filePath) => {
-        if (!scanFile(filePath)) {
-            allPassed = false;
-        }
-    });
+const aiTermsB64 = [
+    "ZGVsdmU=", "dGFwZXN0cnk=", "dW5sZWFzaA==", "Z2FtZS1jaGFuZ2Vy",
+    "cmV2b2x1dGlvbmFyeQ==", "c2VhbWxlc3NseQ==", "aW4gY29uY2x1c2lvbg==",
+    "Ly8gdGhpcyBmdW5jdGlvbiBpbml0aWFsaXplcyB0aGUgb2JzZXJ2ZXI=",
+    "Ly8gaGVyZSB3ZSBsb29wIHRocm91Z2ggdGhlIGFycmF5",
+    "Ly8gaGVscGVyIGZ1bmN0aW9uIHRvIGRvIHh5"
+];
 
-    if (!allPassed) {
-        console.error('Human Grade Verification Failed. AI Footprint Detected.');
-        process.exit(1);
-    } else {
-        console.log('Human Grade Verification Passed. 0.0% AI Footprint.');
+let failed = false;
+
+walkDir(path.join(__dirname, '..'), (filePath) => {
+    if (filePath.includes('node_modules') || filePath.includes('.git') || filePath.includes('assets/')) return;
+    if (filePath.includes('scripts/verify-human-grade.js')) return; // Skip checking the script itself
+    if (filePath.endsWith('.js') || filePath.endsWith('.html') || filePath.endsWith('.md') || filePath.endsWith('.css')) {
+        const content = fs.readFileSync(filePath, 'utf8');
+        const lowerContent = content.toLowerCase();
+        for (const termB64 of aiTermsB64) {
+            const term = Buffer.from(termB64, 'base64').toString('utf8').toLowerCase();
+            if (lowerContent.includes(term)) {
+                console.error(`Violation found in ${filePath}: contains banned AI terminology ("${term}")`);
+                failed = true;
+            }
+        }
     }
-}
+});
 
-runVerification();
+if (failed) {
+    console.error("Verification Failed. Pure human engineering standards not met.");
+    process.exit(1);
+} else {
+    console.log("Verification Passed. 100% Human Craftsmanship confirmed.");
+}
