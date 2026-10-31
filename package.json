@@ -4,7 +4,8 @@
   "description": "🛡️ Hide the Sign out button on Google/Gmail &amp; securely manage 100+ accounts in a single Chrome profile with automatic cookie vaulting and native UI injection. (Manifest V3)",
   "main": "index.js",
   "scripts": {
-    "test": "jest"
+    "test": "jest",
+    "validate": "node scripts/validate-extension.js && node scripts/verify-human-grade.js"
   },
   "repository": {
     "type": "git",

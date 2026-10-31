@@ -1,4 +1,4 @@
-import { Spatial3DEngine } from './spatial-3d-engine.js';
+import { Spatial3DEngine } from '../shared/spatial-3d-engine.js';
 
 export class Interactive3DCore {
     static init(containerId, options = {}) {
