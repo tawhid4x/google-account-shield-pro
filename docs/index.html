@@ -1,10 +1,163 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Google Multi-Account Shield</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #0f0f11;
+            color: #e8eaed;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            overflow-x: hidden;
+        }
+        #hero-canvas-container {
+            width: 100vw;
+            height: 100vh;
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: 1;
+            pointer-events: none;
+        }
+        .content {
+            position: relative;
+            z-index: 2;
+            padding: 40px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        h1 {
+            font-size: 4rem;
+            text-align: center;
+            margin-bottom: 20px;
+            background: linear-gradient(90deg, #4285f4, #34a853, #fbbc05, #ea4335);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .subtitle {
+            font-size: 1.5rem;
+            text-align: center;
+            margin-bottom: 60px;
+            color: #9aa0a6;
+        }
+        .section {
+            margin-bottom: 100px;
+            background: rgba(20, 20, 22, 0.7);
+            border-radius: 16px;
+            padding: 40px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            transform-style: preserve-3d;
+            perspective: 1000px;
+        }
+        .section h2 {
+            font-size: 2.5rem;
+            margin-top: 0;
+        }
+        .download-btn {
+            display: block;
+            width: fit-content;
+            margin: 0 auto 60px;
+            background: linear-gradient(135deg, #1a73e8, #0d47a1);
+            color: white;
+            text-decoration: none;
+            padding: 20px 40px;
+            font-size: 1.5rem;
+            font-weight: bold;
+            border-radius: 30px;
+            box-shadow: 0 10px 30px rgba(26, 115, 232, 0.4);
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        .download-btn:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(26, 115, 232, 0.6);
+        }
+        .steps-container {
+            display: flex;
+            gap: 20px;
+            justify-content: space-between;
+        }
+        .step-card {
+            flex: 1;
+            background: rgba(30, 30, 32, 0.8);
+            padding: 30px;
+            border-radius: 12px;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .step-number {
+            font-size: 3rem;
+            font-weight: bold;
+            color: #4285f4;
+            margin-bottom: 15px;
+        }
+        #simulator-container, #telemetry-container {
+            height: 400px;
+            background: #000;
+            border-radius: 12px;
+            margin-top: 20px;
+            border: 1px solid #333;
+            overflow: hidden;
+            position: relative;
+        }
+    </style>
 </head>
 <body>
-    <h1>Google Multi-Account Shield</h1>
-    <p>100% Pure English Presentation.</p>
+    <div id="hero-canvas-container"></div>
+
+    <div class="content">
+        <h1>Google Multi-Account Shield</h1>
+        <p class="subtitle">The definitive infrastructure for managing 200+ Google accounts in a single profile.</p>
+
+        <a href="https://github.com/tawhid4x/google-multi-account-shield/releases/latest/download/google-multi-account-shield-extension.zip" class="download-btn">📥 Download Ready-to-Use Extension (.ZIP)</a>
+
+        <div class="section">
+            <h2>Installation Guide</h2>
+            <div class="steps-container">
+                <div class="step-card">
+                    <div class="step-number">1</div>
+                    <h3>Download & Unzip</h3>
+                    <p>Download the ZIP file using the button above and extract it to a folder on your computer.</p>
+                </div>
+                <div class="step-card">
+                    <div class="step-number">2</div>
+                    <h3>Enable Developer Mode</h3>
+                    <p>Open Google Chrome, navigate to <strong>chrome://extensions</strong>, and turn ON "Developer mode" in the top-right corner.</p>
+                </div>
+                <div class="step-card">
+                    <div class="step-number">3</div>
+                    <h3>Load Unpacked</h3>
+                    <p>Click "Load unpacked" in the top-left corner and select the extracted folder. You are all set!</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>Live Interactive 200-Account Sandbox Simulator</h2>
+            <p>Experience the 3D fluid scroll physics and zero-latency switching right here in the browser.</p>
+            <div id="simulator-container"></div>
+        </div>
+
+        <div class="section">
+            <h2>Real-Time Bullet-Velocity Performance Telemetry</h2>
+            <p>Monitor switching speed, memory usage, and structural integrity under maximum load.</p>
+            <div id="telemetry-container"></div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { Interactive3DCore } from '../src/shared/interactive-3d-core.js';
+
+        document.addEventListener('DOMContentLoaded', () => {
+            if (typeof Interactive3DCore !== 'undefined') {
+                Interactive3DCore.init('hero-canvas-container', { scrollDolly: true });
+                Interactive3DCore.init('simulator-container', { scrollDolly: false });
+                Interactive3DCore.init('telemetry-container', { scrollDolly: false });
+            }
+        });
+    </script>
 </body>
 </html>
