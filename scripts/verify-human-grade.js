@@ -33,6 +33,15 @@ walkDir(path.join(__dirname, '..'), (filePath) => {
                 failed = true;
             }
         }
+
+        // Pure English check
+        if (filePath.includes('docs/index.html') || filePath.includes('README.md') || filePath.includes('src/popup') || filePath.includes('src/options')) {
+            const nonEnglishRegex = /[^\x00-\x7F©✓🛡️🎮🟢⚡📌×🔍⭐➕💾📂⚙️]/;
+            if (nonEnglishRegex.test(content)) {
+                console.error(`Violation found in ${filePath}: contains non-English characters`);
+                failed = true;
+            }
+        }
     }
 });
 

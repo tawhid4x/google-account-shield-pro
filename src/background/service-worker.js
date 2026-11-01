@@ -1,5 +1,9 @@
 import { CookieVault } from './cookie-vault.js';
 import { SessionRotator } from './session-rotator.js';
+import './seamless-morph-engine.js';
+import './anti-throttle-shield.js';
+import './account-pulse-monitor.js';
+import './self-doctor.js';
 
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     if (msg.type === 'SYNC_DISCOVERED_ACCOUNTS') {
