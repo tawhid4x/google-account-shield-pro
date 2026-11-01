@@ -1,169 +1,131 @@
-export class OmniCommandBar {
-    static init() {
-        window.addEventListener('keydown', (e) => {
-            if (e.altKey && e.key.toLowerCase() === 'g') {
-                e.preventDefault();
-                this.toggle();
-            }
-        });
-    }
+(() => {
+    // __GMAS_SHARED__ guard
+    window.__GMAS_SHARED__ = window.__GMAS_SHARED__ || {};
+    if (window.__GMAS_SHARED__.omniCommandBarLoaded) return;
+    window.__GMAS_SHARED__.omniCommandBarLoaded = true;
 
-    static toggle() {
-        let container = document.getElementById('gmas-omni-bar-host');
-        if (container) {
-            container.remove();
-            return;
+    class OmniCommandBar {
+        constructor() {
+            this.isOpen = false;
+            this.container = null;
+            this.shadow = null;
+
+            this.bindHotkeys();
         }
 
-        container = document.createElement('div');
-        container.id = 'gmas-omni-bar-host';
-        Object.assign(container.style, {
-            position: 'fixed',
-            top: '0',
-            left: '0',
-            width: '100%',
-            height: '100%',
-            zIndex: '2147483647',
-            display: 'flex',
-            justifyContent: 'center',
-            paddingTop: '20vh',
-            pointerEvents: 'none'
-        });
-
-        const shadow = container.attachShadow({ mode: 'closed' });
-
-        const overlay = document.createElement('div');
-        Object.assign(overlay.style, {
-            position: 'absolute',
-            top: '0',
-            left: '0',
-            width: '100%',
-            height: '100%',
-            background: 'rgba(0,0,0,0.5)',
-            backdropFilter: 'blur(4px)',
-            pointerEvents: 'auto'
-        });
-        overlay.addEventListener('click', () => container.remove());
-        shadow.appendChild(overlay);
-
-        const palette = document.createElement('div');
-        Object.assign(palette.style, {
-            width: '600px',
-            background: '#1a1a1a',
-            borderRadius: '12px',
-            boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)',
-            overflow: 'hidden',
-            pointerEvents: 'auto',
-            transform: 'perspective(1200px) rotateX(10deg) translateY(-20px)',
-            opacity: '0',
-            transition: 'transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.2s ease',
-            position: 'relative'
-        });
-
-        const input = document.createElement('input');
-        Object.assign(input.style, {
-            width: '100%',
-            padding: '20px',
-            fontSize: '18px',
-            background: 'transparent',
-            border: 'none',
-            color: '#fff',
-            outline: 'none',
-            borderBottom: '1px solid rgba(255,255,255,0.1)'
-        });
-        input.placeholder = 'Search accounts or type commands (/hide, /show)...';
-        palette.appendChild(input);
-
-        const list = document.createElement('div');
-        Object.assign(list.style, {
-            maxHeight: '300px',
-            overflowY: 'auto',
-            padding: '10px'
-        });
-        palette.appendChild(list);
-
-        shadow.appendChild(palette);
-        document.body.appendChild(container);
-
-        requestAnimationFrame(() => {
-            palette.style.transform = 'perspective(1200px) rotateX(0deg) translateY(0)';
-            palette.style.opacity = '1';
-            input.focus();
-        });
-
-        input.addEventListener('input', (e) => this.handleInput(e.target.value, list));
-        input.addEventListener('keydown', (e) => this.handleKeydown(e, input, list, container));
-    }
-
-    static async handleInput(query, list) {
-        list.innerHTML = '';
-        if (query.startsWith('/')) return; // Handle commands elsewhere
-
-        try {
-            const response = await chrome.runtime.sendMessage({ type: 'GET_VAULT_ACCOUNTS' });
-            if (!response || !response.accounts) return;
-
-            const accounts = response.accounts.filter(a =>
-                (a.name && a.name.toLowerCase().includes(query.toLowerCase())) ||
-                (a.email && a.email.toLowerCase().includes(query.toLowerCase()))
-            ).slice(0, 10);
-
-            accounts.forEach((acc, index) => {
-                const item = document.createElement('div');
-                Object.assign(item.style, {
-                    padding: '12px 16px',
-                    color: '#e8eaed',
-                    cursor: 'pointer',
-                    borderRadius: '8px',
-                    background: index === 0 ? 'rgba(255,255,255,0.1)' : 'transparent',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '12px'
-                });
-                item.dataset.email = acc.email;
-
-                const img = document.createElement('img');
-                img.src = acc.avatarUrl || 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0iI2ZmZiI+PGNpcmNsZSBjeD0iMTIiIGN5PSIxMiIgcj0iMTEiLz48L3N2Zz4=';
-                img.style.width = '24px';
-                img.style.height = '24px';
-                img.style.borderRadius = '50%';
-
-                const text = document.createElement('div');
-                text.textContent = `${acc.name} (${acc.email})`;
-
-                item.appendChild(img);
-                item.appendChild(text);
-
-                list.appendChild(item);
-            });
-        } catch (e) {}
-    }
-
-    static handleKeydown(e, input, list, container) {
-        if (e.key === 'Escape') {
-            container.remove();
-            return;
-        }
-        if (e.key === 'Enter') {
-            const query = input.value.trim();
-            if (query === '/hide') {
-                chrome.storage.local.set({ hideSignout: true });
-                container.remove();
-            } else if (query === '/show') {
-                chrome.storage.local.set({ hideSignout: false });
-                container.remove();
-            } else {
-                const firstItem = list.querySelector('div');
-                if (firstItem && firstItem.dataset.email) {
-                    chrome.runtime.sendMessage({ type: 'SWITCH_TO_ACCOUNT', email: firstItem.dataset.email });
-                    if (e.shiftKey) {
-                        // Open in new tab logic could be signaled here
-                    }
-                    container.remove();
+        bindHotkeys() {
+            document.addEventListener('keydown', (e) => {
+                // Alt + G triggers the command bar
+                if (e.altKey && e.key.toLowerCase() === 'g') {
+                    e.preventDefault();
+                    this.toggle();
                 }
+            });
+        }
+
+        toggle() {
+            if (this.isOpen) {
+                this.close();
+            } else {
+                this.open();
+            }
+        }
+
+        open() {
+            if (this.container) return;
+
+            this.container = document.createElement('div');
+            // Isolate styles and content
+            this.shadow = this.container.attachShadow({ mode: 'closed' });
+
+            // Basic UI Setup
+            const wrapper = document.createElement('div');
+            wrapper.style.cssText = `
+                position: fixed;
+                top: 20%;
+                left: 50%;
+                transform: translate(-50%, 0);
+                width: 600px;
+                background: #1e1e1e;
+                border: 1px solid #333;
+                border-radius: 12px;
+                box-shadow: 0 16px 32px rgba(0,0,0,0.5);
+                z-index: 2147483647;
+                font-family: system-ui, sans-serif;
+                display: flex;
+                flex-direction: column;
+                color: #fff;
+            `;
+
+            const input = document.createElement('input');
+            input.placeholder = 'Search 200+ accounts or type /hide ...';
+            input.style.cssText = `
+                width: 100%;
+                padding: 16px;
+                background: transparent;
+                border: none;
+                border-bottom: 1px solid #333;
+                color: #fff;
+                font-size: 18px;
+                outline: none;
+                box-sizing: border-box;
+            `;
+
+            const list = document.createElement('div');
+            list.style.cssText = `
+                max-height: 300px;
+                overflow-y: auto;
+                padding: 8px;
+            `;
+
+            input.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') {
+                    this.close();
+                } else if (e.key === 'Enter') {
+                    e.preventDefault();
+                    const query = input.value.trim();
+                    if (query === '/hide') {
+                        chrome.storage.local.set({ hideSignout: true });
+                        this.close();
+                    } else if (query === '/show') {
+                        chrome.storage.local.set({ hideSignout: false });
+                        this.close();
+                    } else {
+                        const emailMatch = query.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/);
+                        const selectedEmail = emailMatch ? emailMatch[0] : query;
+                        console.log(`Command Bar: Request switch to match for "${query}"`);
+
+                        chrome.runtime.sendMessage({
+                            type: 'REQUEST_SEAMLESS_SWITCH',
+                            email: selectedEmail,
+                            newTab: e.shiftKey
+                        }).catch(e => console.error("Error switching:", e));
+
+                        this.close();
+                    }
+                }
+            });
+
+            wrapper.appendChild(input);
+            wrapper.appendChild(list);
+            this.shadow.appendChild(wrapper);
+
+            document.documentElement.appendChild(this.container);
+            this.isOpen = true;
+
+            // Focus input slightly after render
+            setTimeout(() => input.focus(), 10);
+        }
+
+        close() {
+            if (this.container) {
+                this.container.remove();
+                this.container = null;
+                this.shadow = null;
+                this.isOpen = false;
             }
         }
     }
-}
 
-OmniCommandBar.init();
+    new OmniCommandBar();
+})();

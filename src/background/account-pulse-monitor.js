@@ -1,46 +1,75 @@
-export class AccountPulseMonitor {
-    static init() {
-        chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
-            if (changeInfo.status === 'complete' && tab.url) {
-                this.analyzeTabPulse(tab);
+class AccountPulseMonitor {
+    constructor() {
+        this.startListening();
+    }
+
+    startListening() {
+        chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+            if (message.type === 'SYNC_ACCOUNT_PULSE') {
+                this.updateAccountPulse(message.email, message.pulseData)
+                    .then(() => sendResponse({ success: true }))
+                    .catch(e => {
+                        console.error('Failed to update account pulse', e);
+                        sendResponse({ success: false, error: e.message });
+                    });
+                return true;
             }
         });
     }
 
-    static async analyzeTabPulse(tab) {
-        if (!tab.url || !tab.title) return;
+    async updateAccountPulse(email, pulseData) {
+        if (!email || !pulseData) return;
 
-        let service = null;
-        if (tab.url.includes('mail.google.com')) service = 'Gmail';
-        else if (tab.url.includes('youtube.com')) service = 'YouTube';
-        else if (tab.url.includes('drive.google.com')) service = 'Drive';
+        const result = await chrome.storage.local.get('gmas_account_vault');
+        const vault = result.gmas_account_vault || {};
 
-        if (!service) return;
+        if (vault[email]) {
+            vault[email].pulse = {
+                ...vault[email].pulse,
+                ...pulseData,
+                lastUpdated: Date.now()
+            };
 
-        // Try to extract unread count from title, e.g., "Inbox (14) - user@gmail.com"
-        const unreadMatch = tab.title.match(/\((\d+)\)/);
-        const unreadCount = unreadMatch ? parseInt(unreadMatch[1], 10) : 0;
-
-        const emailMatch = tab.title.match(/([a-zA-Z0-9._-]+@[a-zA-Z0-9._-]+\.[a-zA-Z0-9_-]+)/);
-        const email = emailMatch ? emailMatch[1].toLowerCase() : null;
-
-        if (email) {
-            this.updateAccountPulse(email, service, unreadCount);
+            await chrome.storage.local.set({ gmas_account_vault: vault });
+            console.log(`Account Pulse Monitor: Updated pulse for ${email}`, pulseData);
         }
     }
 
-    static async updateAccountPulse(email, service, unreadCount) {
-        const { gmas_account_vault = {} } = await chrome.storage.local.get('gmas_account_vault');
+    // Helper to be injected into content scripts or run via scripting API
+    static contentScriptScraper() {
+        const pulseData = {};
 
-        if (gmas_account_vault[email]) {
-            if (!gmas_account_vault[email].pulse) {
-                gmas_account_vault[email].pulse = {};
-            }
-            gmas_account_vault[email].pulse.lastService = service;
-            gmas_account_vault[email].pulse.unreadCount = unreadCount;
-            gmas_account_vault[email].pulse.lastChecked = Date.now();
-
-            await chrome.storage.local.set({ gmas_account_vault });
+        // Check for unread count in title (e.g. "Inbox (14) - user@gmail.com")
+        const match = document.title.match(/\((\d+)\)/);
+        if (match) {
+            pulseData.unreadCount = parseInt(match[1], 10);
         }
+
+        // Determine service badge based on hostname
+        const host = window.location.hostname;
+        if (host.includes('mail.google.com')) pulseData.serviceBadge = '📧';
+        else if (host.includes('youtube.com')) pulseData.serviceBadge = '📺';
+        else if (host.includes('drive.google.com')) pulseData.serviceBadge = '☁️';
+        else pulseData.serviceBadge = '🛡️';
+
+        // Send the message using the currently active email in DOM
+        const emailElement = document.querySelector('div.gb_xb.gb_yb, .y7OZL');
+        if (emailElement) {
+            const email = emailElement.textContent.trim();
+            chrome.runtime.sendMessage({
+                type: 'SYNC_ACCOUNT_PULSE',
+                email: email,
+                pulseData: pulseData
+            }).catch(e => console.error("Error sending pulse:", e));
+        }
+
+        return pulseData;
     }
 }
+
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = AccountPulseMonitor;
+}
+
+// Instantiate the monitor
+const pulseMonitor = new AccountPulseMonitor();

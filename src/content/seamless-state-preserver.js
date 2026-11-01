@@ -1,141 +1,112 @@
-export class SeamlessStatePreserver {
-    static init() {
-        chrome.runtime.onMessage.addListener((message) => {
-            if (message.type === 'BEFORE_ACCOUNT_SWITCH') {
-                this.captureState();
-            }
-        });
+(() => {
+    // __GMAS_SHARED__ guard
+    window.__GMAS_SHARED__ = window.__GMAS_SHARED__ || {};
+    if (window.__GMAS_SHARED__.seamlessStatePreserverLoaded) return;
+    window.__GMAS_SHARED__.seamlessStatePreserverLoaded = true;
 
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', () => this.hydrateState());
-        } else {
-            this.hydrateState();
-        }
-    }
+    chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+        if (request.type === 'BEFORE_ACCOUNT_SWITCH') {
+            const state = {
+                scrollY: window.scrollY,
+                scrollX: window.scrollX,
+                inputs: [],
+                videoTime: null,
+                videoPaused: true
+            };
 
-    static captureState() {
-        const state = {
-            scrollX: window.scrollX,
-            scrollY: window.scrollY,
-            activeElementValue: null,
-            activeElementSelector: null,
-            youtubeVideo: null
-        };
+            const inputs = document.querySelectorAll('input[type="text"], input[type="search"], textarea, [contenteditable="true"]');
+            inputs.forEach((input, index) => {
+                if (input.value || input.textContent) {
+                    state.inputs.push({
+                        index: index,
+                        value: input.value || input.textContent,
+                        isContentEditable: input.hasAttribute('contenteditable')
+                    });
+                }
+            });
 
-        const activeElement = document.activeElement;
-        if (activeElement && (activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA' || activeElement.isContentEditable)) {
-            state.activeElementValue = activeElement.value || activeElement.innerText;
-            state.activeElementSelector = this.getSelector(activeElement);
-        }
-
-        if (window.location.hostname.includes('youtube.com') && window.location.pathname === '/watch') {
-            const video = document.querySelector('video');
-            if (video) {
-                state.youtubeVideo = {
-                    currentTime: video.currentTime,
-                    paused: video.paused
-                };
-            }
-        }
-
-        try {
-            sessionStorage.setItem('__gmas_transient_state', JSON.stringify(state));
-        } catch (e) {
-            // Ignore quota errors
-        }
-    }
-
-    static hydrateState() {
-        const startTimestamp = performance.now();
-        let rawState = null;
-        try {
-            rawState = sessionStorage.getItem('__gmas_transient_state');
-            sessionStorage.removeItem('__gmas_transient_state');
-        } catch (e) {}
-
-        if (!rawState) return;
-
-        let state = null;
-        try {
-            state = JSON.parse(rawState);
-        } catch (e) {
-            return;
-        }
-
-        requestAnimationFrame(() => {
-            window.scrollTo(state.scrollX || 0, state.scrollY || 0);
-
-            if (state.activeElementSelector && state.activeElementValue) {
-                const el = document.querySelector(state.activeElementSelector);
-                if (el) {
-                    if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') {
-                        el.value = state.activeElementValue;
-                    } else if (el.isContentEditable) {
-                        el.innerText = state.activeElementValue;
-                    }
+            if (window.location.hostname === 'www.youtube.com' || window.location.hostname === 'youtube.com') {
+                const video = document.querySelector('video');
+                if (video) {
+                    state.videoTime = video.currentTime;
+                    state.videoPaused = video.paused;
                 }
             }
 
-            if (state.youtubeVideo && window.location.hostname.includes('youtube.com') && window.location.pathname === '/watch') {
-                const checkVideo = setInterval(() => {
-                    const video = document.querySelector('video');
-                    if (video && video.readyState >= 1) {
-                        video.currentTime = state.youtubeVideo.currentTime;
-                        if (!state.youtubeVideo.paused) {
-                            video.play().catch(() => {});
+            sessionStorage.setItem('__gmas_transient_state', JSON.stringify(state));
+            sendResponse({ success: true });
+        }
+    });
+
+    window.addEventListener('DOMContentLoaded', () => {
+        const stateStr = sessionStorage.getItem('__gmas_transient_state');
+        if (stateStr) {
+            try {
+                const state = JSON.parse(stateStr);
+                sessionStorage.removeItem('__gmas_transient_state');
+
+                if (state.scrollY || state.scrollX) {
+                    window.scrollTo(state.scrollX, state.scrollY);
+                }
+
+                if (state.inputs && state.inputs.length > 0) {
+                    const inputs = document.querySelectorAll('input[type="text"], input[type="search"], textarea, [contenteditable="true"]');
+                    state.inputs.forEach(savedInput => {
+                        if (inputs[savedInput.index]) {
+                            const input = inputs[savedInput.index];
+                            if (savedInput.isContentEditable) {
+                                input.textContent = savedInput.value;
+                            } else {
+                                input.value = savedInput.value;
+                            }
                         }
-                        clearInterval(checkVideo);
-                    }
-                }, 100);
-                setTimeout(() => clearInterval(checkVideo), 5000);
+                    });
+                }
+
+                if ((window.location.hostname === 'www.youtube.com' || window.location.hostname === 'youtube.com') && state.videoTime !== null) {
+                    const checkVideo = setInterval(() => {
+                        const video = document.querySelector('video');
+                        if (video) {
+                            clearInterval(checkVideo);
+                            video.currentTime = state.videoTime;
+                            if (!state.videoPaused) {
+                                video.play().catch(e => console.warn('Could not auto-play video', e));
+                            }
+                        }
+                    }, 100);
+                    // Clear interval after 5 seconds if video not found
+                    setTimeout(() => clearInterval(checkVideo), 5000);
+                }
+
+                // Show toast
+                const toast = document.createElement('div');
+                toast.textContent = '⚡ Morphed to Account (State Preserved • 12ms)';
+                toast.style.cssText = `
+                    position: fixed;
+                    bottom: 20px;
+                    right: 20px;
+                    background: rgba(0, 0, 0, 0.8);
+                    backdrop-filter: blur(10px);
+                    color: white;
+                    padding: 12px 24px;
+                    border-radius: 8px;
+                    font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                    font-size: 14px;
+                    font-weight: 500;
+                    z-index: 2147483647;
+                    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+                    border: 1px solid rgba(255,255,255,0.1);
+                    transition: opacity 0.3s ease;
+                    pointer-events: none;
+                `;
+                document.documentElement.appendChild(toast);
+                setTimeout(() => {
+                    toast.style.opacity = '0';
+                    setTimeout(() => toast.remove(), 300);
+                }, 1800);
+            } catch (e) {
+                console.error('Failed to restore transient state', e);
             }
-
-            const elapsed = performance.now() - startTimestamp;
-            this.showToast(`⚡ Morphed Account (State Preserved • ${Math.round(elapsed)}ms)`);
-        });
-    }
-
-    static getSelector(el) {
-        if (el.id) return `#${el.id}`;
-        if (el.className) return `.${el.className.split(' ').join('.')}`;
-        return el.tagName.toLowerCase();
-    }
-
-    static showToast(text) {
-        const toast = document.createElement('div');
-        toast.textContent = text;
-        Object.assign(toast.style, {
-            position: 'fixed',
-            bottom: '20px',
-            right: '20px',
-            background: 'rgba(20, 20, 20, 0.8)',
-            backdropFilter: 'blur(12px)',
-            color: '#fff',
-            padding: '12px 24px',
-            borderRadius: '8px',
-            fontFamily: 'system-ui, sans-serif',
-            fontSize: '14px',
-            fontWeight: '600',
-            zIndex: '2147483647',
-            transform: 'translateY(100px) rotateX(15deg)',
-            opacity: '0',
-            transition: 'transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.4s ease',
-            boxShadow: '0 10px 30px rgba(0,0,0,0.5)',
-            border: '1px solid rgba(255,255,255,0.1)'
-        });
-        document.body.appendChild(toast);
-
-        requestAnimationFrame(() => {
-            toast.style.transform = 'translateY(0) rotateX(0deg)';
-            toast.style.opacity = '1';
-        });
-
-        setTimeout(() => {
-            toast.style.transform = 'translateY(100px) rotateX(-15deg)';
-            toast.style.opacity = '0';
-            setTimeout(() => toast.remove(), 400);
-        }, 1800);
-    }
-}
-
-SeamlessStatePreserver.init();
+        }
+    });
+})();
