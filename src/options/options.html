@@ -1,8 +1,20 @@
 <!DOCTYPE html>
 <html>
-<head><link rel="stylesheet" href="options.css"></head>
+<head>
+    <meta charset="UTF-8">
+    <title>Google Multi-Account Shield Options</title>
+    <link rel="stylesheet" href="options.css">
+    <style>
+        body { margin: 0; background: #0f0f11; color: #fff; overflow: hidden; }
+        #3d-container { width: 100vw; height: 100vh; position: absolute; top: 0; left: 0; z-index: -1; }
+        #dashboard { position: relative; z-index: 1; padding: 20px; }
+    </style>
+</head>
 <body>
-    <div id="dashboard"></div>
+    <div id="3d-container"></div>
+    <div id="dashboard">
+        <h1>Vault Manager</h1>
+    </div>
     <script src="options.js" type="module"></script>
 </body>
 </html>

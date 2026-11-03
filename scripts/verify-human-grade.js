@@ -20,16 +20,27 @@ const aiTermsB64 = [
 ];
 
 let failed = false;
+const nonEnglishRegex = /[^\x00-\x7F]/;
 
 walkDir(path.join(__dirname, '..'), (filePath) => {
     if (filePath.includes('node_modules') || filePath.includes('.git') || filePath.includes('assets/')) return;
     if (filePath.includes('scripts/verify-human-grade.js')) return; // Skip checking the script itself
     if (filePath.endsWith('.js') || filePath.endsWith('.html') || filePath.endsWith('.md') || filePath.endsWith('.css')) {
-        const content = fs.readFileSync(filePath, 'utf8').toLowerCase();
+        const rawContent = fs.readFileSync(filePath, 'utf8');
+        const content = rawContent.toLowerCase();
+
         for (const termB64 of aiTermsB64) {
             const term = Buffer.from(termB64, 'base64').toString('utf8').toLowerCase();
             if (content.includes(term)) {
                 console.error(`Violation found in ${filePath}: contains banned terminology (${term})`);
+                failed = true;
+            }
+        }
+
+        // Allow non-English characters ONLY in signout-shield.js for foreign language match strings
+        if (!filePath.includes('signout-shield.js') && !filePath.includes('package-lock.json')) {
+            if (nonEnglishRegex.test(rawContent)) {
+                console.error(`Violation found in ${filePath}: contains non-English characters. All UI and code must be 100% pure English.`);
                 failed = true;
             }
         }
