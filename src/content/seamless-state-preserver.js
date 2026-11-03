@@ -91,7 +91,7 @@ export class SeamlessStatePreserver {
             }
 
             const elapsed = performance.now() - startTimestamp;
-            this.showToast(`⚡ Morphed Account (State Preserved • ${Math.round(elapsed)}ms)`);
+            this.showToast(`Morphed Account (State Preserved -${Math.round(elapsed)}ms)`);
         });
     }
 
