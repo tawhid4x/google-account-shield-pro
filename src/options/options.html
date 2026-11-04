@@ -1,8 +1,63 @@
 <!DOCTYPE html>
-<html>
-<head><link rel="stylesheet" href="options.css"></head>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Vault Manager - Google Account Shield</title>
+    <link rel="stylesheet" href="options.css">
+</head>
 <body>
-    <div id="dashboard"></div>
+    <div id="hero-canvas-container" style="position: fixed; top:0; left:0; width:100%; height:100%; z-index:-1; pointer-events:none;"></div>
+
+    <div id="dashboard">
+        <header data-3d-card>
+            <div class="header-content">
+                <h1>Shield Vault Manager</h1>
+                <div class="actions">
+                    <button id="btn-export" class="btn">Export Vault</button>
+                    <button id="btn-import" class="btn btn-primary">Import Vault</button>
+                </div>
+            </div>
+
+            <div class="telemetry-panel">
+                <canvas id="telemetry-canvas" width="600" height="150" style="width:100%; height:150px;"></canvas>
+            </div>
+        </header>
+
+        <main>
+            <div class="search-bar" data-3d-card>
+                <input type="text" id="search-input" placeholder="Search accounts, emails, tags...">
+            </div>
+
+            <div class="accounts-grid" id="accounts-grid">
+                <!-- Accounts will be injected here -->
+            </div>
+        </main>
+
+        <!-- Import Modal -->
+        <div id="import-modal" class="modal" style="display:none;">
+            <div class="modal-content" data-3d-card>
+                <h2>Import Vault Capsule</h2>
+                <textarea id="import-data" placeholder="Paste your .gmas capsule here..."></textarea>
+                <input type="password" id="import-password" placeholder="Decryption Password">
+                <div class="modal-actions">
+                    <button id="btn-cancel-import">Cancel</button>
+                    <button id="btn-confirm-import" class="btn-primary">Decrypt & Import</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Export Modal -->
+        <div id="export-modal" class="modal" style="display:none;">
+            <div class="modal-content" data-3d-card>
+                <h2>Export Vault Capsule</h2>
+                <input type="password" id="export-password" placeholder="Encryption Password">
+                <div class="modal-actions">
+                    <button id="btn-cancel-export">Cancel</button>
+                    <button id="btn-confirm-export" class="btn-primary">Encrypt & Copy</button>
+                </div>
+            </div>
+        </div>
+    </div>
     <script src="options.js" type="module"></script>
 </body>
 </html>
