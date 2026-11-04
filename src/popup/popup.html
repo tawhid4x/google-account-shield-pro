@@ -1,8 +1,59 @@
 <!DOCTYPE html>
-<html>
-<head><link rel="stylesheet" href="popup.css"></head>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Google Account Shield</title>
+    <link rel="stylesheet" href="popup.css">
+</head>
 <body>
-    <div id="app"></div>
+    <div id="hero-canvas-container" style="position: absolute; top:0; left:0; width:100%; height:100%; z-index:-1; pointer-events:none;"></div>
+
+    <div id="app">
+        <header>
+            <div class="logo">🛡</div>
+            <h1>Account Shield</h1>
+            <div class="status">Protected</div>
+        </header>
+
+        <main>
+            <div class="card" data-3d-card>
+                <div class="stat-row">
+                    <span class="label">Vault Accounts</span>
+                    <span class="value" id="vault-count">0</span>
+                </div>
+                <div class="stat-row">
+                    <span class="label">Shield Events</span>
+                    <span class="value" id="shield-count">0</span>
+                </div>
+                <canvas id="mini-telemetry" width="300" height="60" style="width:100%; height:60px; margin-top:10px;"></canvas>
+            </div>
+
+            <div class="toggles">
+                <label class="toggle-row" data-3d-card>
+                    <span class="toggle-info">
+                        <span class="toggle-title">Hide Sign-Out Button</span>
+                        <span class="toggle-desc">Prevents accidental mass-logout.</span>
+                    </span>
+                    <input type="checkbox" id="toggle-hide-signout" checked>
+                    <span class="slider"></span>
+                </label>
+
+                <label class="toggle-row" data-3d-card>
+                    <span class="toggle-info">
+                        <span class="toggle-title">Session Auto-Vault</span>
+                        <span class="toggle-desc">Automatically saves valid sessions.</span>
+                    </span>
+                    <input type="checkbox" id="toggle-vault" checked>
+                    <span class="slider"></span>
+                </label>
+            </div>
+        </main>
+
+        <footer>
+            <button id="btn-options" class="btn-secondary">⚙ Open Full Vault</button>
+        </footer>
+    </div>
     <script src="popup.js" type="module"></script>
 </body>
 </html>
