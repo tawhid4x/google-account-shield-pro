@@ -1,1 +1,1 @@
-console.log("Popup UI Init");
+console.debug("Popup UI Init");

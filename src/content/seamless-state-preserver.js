@@ -2,7 +2,7 @@ export class SeamlessStatePreserver {
     static init() {
         chrome.runtime.onMessage.addListener((message) => {
             if (message.type === 'BEFORE_ACCOUNT_SWITCH') {
-                this.captureState();
+                this.captureState(message.email);
             }
         });
 
@@ -13,13 +13,14 @@ export class SeamlessStatePreserver {
         }
     }
 
-    static captureState() {
+    static captureState(email) {
         const state = {
             scrollX: window.scrollX,
             scrollY: window.scrollY,
             activeElementValue: null,
             activeElementSelector: null,
-            youtubeVideo: null
+            youtubeVideo: null,
+            accountEmail: email
         };
 
         const activeElement = document.activeElement;
@@ -41,7 +42,7 @@ export class SeamlessStatePreserver {
         try {
             sessionStorage.setItem('__gmas_transient_state', JSON.stringify(state));
         } catch (e) {
-            // Ignore quota errors
+            // Failsafe for quota
         }
     }
 
@@ -91,7 +92,7 @@ export class SeamlessStatePreserver {
             }
 
             const elapsed = performance.now() - startTimestamp;
-            this.showToast(`⚡ Morphed Account (State Preserved • ${Math.round(elapsed)}ms)`);
+            this.showToast(`⚡ Morphed to ${state.accountEmail || 'Account'} (State Preserved • ${Math.round(elapsed)}ms)`);
         });
     }
 

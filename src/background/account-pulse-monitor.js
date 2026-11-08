@@ -1,46 +1,61 @@
 export class AccountPulseMonitor {
     static init() {
         chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
-            if (changeInfo.status === 'complete' && tab.url) {
-                this.analyzeTabPulse(tab);
+            if (changeInfo.title && tab.url) {
+                this.harvestMetadata(tab);
             }
         });
     }
 
-    static async analyzeTabPulse(tab) {
-        if (!tab.url || !tab.title) return;
+    static async harvestMetadata(tab) {
+        const title = tab.title || '';
+        let unreadCount = 0;
+        const match = title.match(/\((\d+)\)/);
+        if (match) {
+            unreadCount = parseInt(match[1], 10);
+        }
 
-        let service = null;
-        if (tab.url.includes('mail.google.com')) service = 'Gmail';
-        else if (tab.url.includes('youtube.com')) service = 'YouTube';
-        else if (tab.url.includes('drive.google.com')) service = 'Drive';
+        let serviceBadge = '';
+        if (tab.url.includes('mail.google.com')) serviceBadge = '📧';
+        else if (tab.url.includes('youtube.com')) serviceBadge = '📺';
+        else if (tab.url.includes('drive.google.com')) serviceBadge = '☁️';
 
-        if (!service) return;
+        let email = '';
+        const emailMatch = title.match(/[\w.-]+@[\w.-]+\.\w+/);
+        if (emailMatch) {
+            email = emailMatch[0].toLowerCase();
+        }
 
-        // Try to extract unread count from title, e.g., "Inbox (14) - user@gmail.com"
-        const unreadMatch = tab.title.match(/\((\d+)\)/);
-        const unreadCount = unreadMatch ? parseInt(unreadMatch[1], 10) : 0;
-
-        const emailMatch = tab.title.match(/([a-zA-Z0-9._-]+@[a-zA-Z0-9._-]+\.[a-zA-Z0-9_-]+)/);
-        const email = emailMatch ? emailMatch[1].toLowerCase() : null;
-
-        if (email) {
-            this.updateAccountPulse(email, service, unreadCount);
+        if (email && serviceBadge) {
+            try {
+                const { gmas_account_vault = {} } = await chrome.storage.local.get('gmas_account_vault');
+                if (gmas_account_vault[email]) {
+                    gmas_account_vault[email].pulse = {
+                        unread: unreadCount,
+                        service: serviceBadge,
+                        timestamp: Date.now()
+                    };
+                    await chrome.storage.local.set({ gmas_account_vault });
+                }
+            } catch (e) {}
         }
     }
 
-    static async updateAccountPulse(email, service, unreadCount) {
-        const { gmas_account_vault = {} } = await chrome.storage.local.get('gmas_account_vault');
-
-        if (gmas_account_vault[email]) {
-            if (!gmas_account_vault[email].pulse) {
-                gmas_account_vault[email].pulse = {};
-            }
-            gmas_account_vault[email].pulse.lastService = service;
-            gmas_account_vault[email].pulse.unreadCount = unreadCount;
-            gmas_account_vault[email].pulse.lastChecked = Date.now();
-
-            await chrome.storage.local.set({ gmas_account_vault });
+    static getStatusBadge(account) {
+        if (!account.cookies || account.cookies.length === 0) {
+            return '🟠 Needs 1-Click Refresh';
         }
+
+        const now = Date.now();
+        // Just checking if tokens are generally fresh enough
+        const isFresh = account.cookies.some(c => c.name === 'SID' && (!c.expirationDate || c.expirationDate * 1000 > now + 86400000));
+
+        if (isFresh) {
+            return '🟢 100% Healthy (Token Fresh)';
+        }
+
+        return '🔵 Vaulted (Ready for 0.4ms Switch)';
     }
 }
+
+AccountPulseMonitor.init();

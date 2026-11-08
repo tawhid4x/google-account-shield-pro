@@ -97,7 +97,9 @@ export class OmniCommandBar {
 
     static async handleInput(query, list) {
         list.innerHTML = '';
-        if (query.startsWith('/')) return; // Handle commands elsewhere
+        if (query.startsWith('/')) return;
+
+        if (query.length < 2) return;
 
         try {
             const response = await chrome.runtime.sendMessage({ type: 'GET_VAULT_ACCOUNTS' });
@@ -155,10 +157,11 @@ export class OmniCommandBar {
             } else {
                 const firstItem = list.querySelector('div');
                 if (firstItem && firstItem.dataset.email) {
-                    chrome.runtime.sendMessage({ type: 'SWITCH_TO_ACCOUNT', email: firstItem.dataset.email });
-                    if (e.shiftKey) {
-                        // Open in new tab logic could be signaled here
-                    }
+                    chrome.runtime.sendMessage({
+                        type: 'SWITCH_TO_ACCOUNT',
+                        email: firstItem.dataset.email,
+                        newTab: e.shiftKey
+                    });
                     container.remove();
                 }
             }

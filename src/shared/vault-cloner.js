@@ -1,65 +1,74 @@
 export class VaultCloner {
-    static async exportToCapsule(vaultData, password) {
-        const jsonStr = JSON.stringify(vaultData);
-        const encoder = new TextEncoder();
-        const data = encoder.encode(jsonStr);
+    static async exportCapsule(accounts, password) {
+        try {
+            const dataStr = JSON.stringify(accounts);
+            const encoder = new TextEncoder();
+            const dataBuffer = encoder.encode(dataStr);
 
-        // Compress using CompressionStream if available, otherwise just use raw data
-        let compressedData = data;
-        if (typeof CompressionStream !== 'undefined') {
-            const cs = new CompressionStream('gzip');
-            const writer = cs.writable.getWriter();
-            writer.write(data);
-            writer.close();
-            const response = new Response(cs.readable);
-            const arrayBuffer = await response.arrayBuffer();
-            compressedData = new Uint8Array(arrayBuffer);
+            // Compress using GZIP
+            let compressedData = dataBuffer;
+            if (typeof CompressionStream !== 'undefined') {
+                const cs = new CompressionStream('gzip');
+                const writer = cs.writable.getWriter();
+                writer.write(dataBuffer);
+                writer.close();
+                const response = new Response(cs.readable);
+                const arrayBuffer = await response.arrayBuffer();
+                compressedData = new Uint8Array(arrayBuffer);
+            }
+
+            // Derive key using PBKDF2
+            const salt = crypto.getRandomValues(new Uint8Array(16));
+            const keyMaterial = await crypto.subtle.importKey(
+                "raw",
+                encoder.encode(password),
+                { name: "PBKDF2" },
+                false,
+                ["deriveBits", "deriveKey"]
+            );
+
+            const key = await crypto.subtle.deriveKey(
+                {
+                    name: "PBKDF2",
+                    salt: salt,
+                    iterations: 100000,
+                    hash: "SHA-256"
+                },
+                keyMaterial,
+                { name: "AES-GCM", length: 256 },
+                false,
+                ["encrypt", "decrypt"]
+            );
+
+            // Encrypt using AES-GCM
+            const iv = crypto.getRandomValues(new Uint8Array(12));
+            const encryptedBuffer = await crypto.subtle.encrypt(
+                { name: "AES-GCM", iv: iv },
+                key,
+                compressedData
+            );
+
+            // Bundle salt, iv, and ciphertext
+            const encryptedArray = new Uint8Array(encryptedBuffer);
+            const bundle = new Uint8Array(salt.length + iv.length + encryptedArray.length);
+            bundle.set(salt, 0);
+            bundle.set(iv, salt.length);
+            bundle.set(encryptedArray, salt.length + iv.length);
+
+            // Convert to Base64 (using a safe approach for large arrays)
+            let binaryString = "";
+            const chunkSize = 8192;
+            for (let i = 0; i < bundle.length; i += chunkSize) {
+                binaryString += String.fromCharCode.apply(null, bundle.subarray(i, i + chunkSize));
+            }
+            return btoa(binaryString);
+
+        } catch (e) {
+            return null;
         }
-
-        // Encrypt
-        const salt = crypto.getRandomValues(new Uint8Array(16));
-        const iv = crypto.getRandomValues(new Uint8Array(12));
-
-        const keyMaterial = await crypto.subtle.importKey(
-            "raw",
-            encoder.encode(password),
-            { name: "PBKDF2" },
-            false,
-            ["deriveBits", "deriveKey"]
-        );
-
-        const key = await crypto.subtle.deriveKey(
-            {
-                name: "PBKDF2",
-                salt: salt,
-                iterations: 100000,
-                hash: "SHA-256"
-            },
-            keyMaterial,
-            { name: "AES-GCM", length: 256 },
-            false,
-            ["encrypt", "decrypt"]
-        );
-
-        const ciphertext = await crypto.subtle.encrypt(
-            { name: "AES-GCM", iv: iv },
-            key,
-            compressedData
-        );
-
-        const bundle = new Uint8Array(salt.length + iv.length + ciphertext.byteLength);
-        bundle.set(salt, 0);
-        bundle.set(iv, salt.length);
-        bundle.set(new Uint8Array(ciphertext), salt.length + iv.length);
-
-        let binaryString = "";
-        for (let i = 0; i < bundle.byteLength; i++) {
-            binaryString += String.fromCharCode(bundle[i]);
-        }
-        return btoa(binaryString);
     }
 
-    static async importFromCapsule(capsuleBase64, password) {
+    static async importCapsule(capsuleBase64, password) {
         try {
             const binaryString = atob(capsuleBase64);
             const bundle = new Uint8Array(binaryString.length);
