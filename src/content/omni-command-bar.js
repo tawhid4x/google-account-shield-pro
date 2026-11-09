@@ -157,7 +157,7 @@ export class OmniCommandBar {
                 if (firstItem && firstItem.dataset.email) {
                     chrome.runtime.sendMessage({ type: 'SWITCH_TO_ACCOUNT', email: firstItem.dataset.email });
                     if (e.shiftKey) {
-                        // Open in new tab logic could be signaled here
+                        chrome.runtime.sendMessage({ type: 'SWITCH_TO_ACCOUNT_NEW_TAB', email: firstItem.dataset.email });
                     }
                     container.remove();
                 }
