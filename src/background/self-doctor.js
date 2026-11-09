@@ -27,9 +27,26 @@ export class SelfDoctor {
                     pulse: accountData.pulse || null
                 };
 
-                // Filter out malformed cookies
+                // Filter out malformed cookies & normalize domain prefixes for __Host- and __Secure-
                 const validCookies = healthyAccount.cookies.filter(cookie => {
-                    return cookie && typeof cookie.name === 'string' && typeof cookie.value === 'string' && typeof cookie.domain === 'string';
+                    if (!cookie || typeof cookie.name !== 'string' || typeof cookie.value !== 'string' || typeof cookie.domain !== 'string') {
+                        return false;
+                    }
+
+                    // Enforce __Host- cookie domain constraints
+                    if (cookie.name.startsWith('__Host-')) {
+                        if (cookie.domain.startsWith('.')) {
+                            cookie.domain = cookie.domain.substring(1);
+                            repaired = true;
+                        }
+                    }
+
+                    // Strip expired cookies
+                    if (cookie.expirationDate && (cookie.expirationDate * 1000) < Date.now()) {
+                        return false;
+                    }
+
+                    return true;
                 });
 
                 if (validCookies.length !== healthyAccount.cookies.length) {
@@ -37,7 +54,15 @@ export class SelfDoctor {
                     repaired = true;
                 }
 
-                healthyVault[normalizedEmail] = healthyAccount;
+                // Deduplicate identical email entries by always picking the most recently active one if conflict
+                if (healthyVault[normalizedEmail]) {
+                    if (healthyAccount.lastActive > healthyVault[normalizedEmail].lastActive) {
+                        healthyVault[normalizedEmail] = healthyAccount;
+                    }
+                    repaired = true;
+                } else {
+                    healthyVault[normalizedEmail] = healthyAccount;
+                }
 
                 if (normalizedEmail !== email) {
                     repaired = true;

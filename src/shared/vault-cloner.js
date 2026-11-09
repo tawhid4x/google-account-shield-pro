@@ -1,6 +1,22 @@
 export class VaultCloner {
-    static async exportToCapsule(vaultData, password) {
-        const jsonStr = JSON.stringify(vaultData);
+    static async exportToCapsule(vaultData, password, selectiveAccounts = null, expirationTimestamp = null) {
+        let exportData = vaultData;
+
+        if (selectiveAccounts && Array.isArray(selectiveAccounts)) {
+            exportData = {};
+            for (const email of selectiveAccounts) {
+                if (vaultData[email]) {
+                    exportData[email] = vaultData[email];
+                }
+            }
+        }
+
+        const payload = {
+            data: exportData,
+            expires: expirationTimestamp
+        };
+
+        const jsonStr = JSON.stringify(payload);
         const encoder = new TextEncoder();
         const data = encoder.encode(jsonStr);
 
@@ -112,7 +128,13 @@ export class VaultCloner {
 
             const decoder = new TextDecoder();
             const jsonStr = decoder.decode(decompressedData);
-            return JSON.parse(jsonStr);
+            const payload = JSON.parse(jsonStr);
+
+            if (payload.expires && Date.now() > payload.expires) {
+                throw new Error('Capsule expired');
+            }
+
+            return payload.data;
         } catch (e) {
             return null;
         }

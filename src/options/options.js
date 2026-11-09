@@ -1,1 +1,1 @@
-console.log("Options Init");
+Logger.info("Options Init");

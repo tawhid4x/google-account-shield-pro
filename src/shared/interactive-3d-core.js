@@ -38,9 +38,23 @@ export class Interactive3DCore {
         window.addEventListener('scroll', () => {
             const scrollY = window.scrollY;
             if (options.scrollDolly) {
+                // Implement layer transitions based on depth
                 engine.dolly(-scrollY * 0.05);
+
+                if (scrollY > 400 && scrollY <= 800) {
+                    engine.setLayerDepth(-400); // Layer 2
+                } else if (scrollY > 800) {
+                    engine.setLayerDepth(-800); // Layer 3
+                } else {
+                    engine.setLayerDepth(0); // Layer 1
+                }
             }
         });
+
+        // Interactive Telemetry Oscilloscope
+        if (options.telemetry) {
+            this.renderTelemetryOscilloscope(engine, canvas);
+        }
 
         // Intersection Observer to sleep when out of view
         const observer = new IntersectionObserver((entries) => {
@@ -55,5 +69,37 @@ export class Interactive3DCore {
         observer.observe(container);
 
         return engine;
+    }
+
+    static renderTelemetryOscilloscope(engine, canvas) {
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return;
+
+        let time = 0;
+        const drawOscilloscope = () => {
+            if (!engine.isRunning()) return requestAnimationFrame(drawOscilloscope);
+
+            ctx.save();
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Plotting dummy bullet-velocity graph
+            ctx.beginPath();
+            ctx.strokeStyle = '#00ffcc';
+            ctx.lineWidth = 2;
+            ctx.shadowColor = '#00ffcc';
+            ctx.shadowBlur = 10;
+
+            for (let x = 0; x < canvas.width; x += 5) {
+                const y = canvas.height - (Math.exp(x / canvas.width * 5) * 5 + Math.sin(time + x * 0.05) * 10);
+                if (x === 0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
+            }
+            ctx.stroke();
+            ctx.restore();
+
+            time += 0.1;
+            requestAnimationFrame(drawOscilloscope);
+        };
+        requestAnimationFrame(drawOscilloscope);
     }
 }
