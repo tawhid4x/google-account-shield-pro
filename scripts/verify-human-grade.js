@@ -33,6 +33,16 @@ walkDir(path.join(__dirname, '..'), (filePath) => {
                 failed = true;
             }
         }
+
+        if (filePath.endsWith('.js') && !filePath.includes('scripts/')) {
+            const lines = content.split('\n');
+            for (let i = 0; i < lines.length; i++) {
+                if (lines[i].includes('console.log') && !lines[i].includes('console.debug')) {
+                    console.error(`Violation found in ${filePath}:${i+1}: console.log is banned. Use console.debug or Logger.`);
+                    failed = true;
+                }
+            }
+        }
     }
 });
 

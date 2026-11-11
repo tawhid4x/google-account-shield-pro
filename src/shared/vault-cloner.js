@@ -1,6 +1,15 @@
 export class VaultCloner {
-    static async exportToCapsule(vaultData, password) {
-        const jsonStr = JSON.stringify(vaultData);
+    static async exportToCapsule(vaultData, password, expireMinutes = null) {
+        let expiration = 0;
+        if (expireMinutes) {
+            expiration = Date.now() + (expireMinutes * 60 * 1000);
+        }
+
+        const payload = {
+            data: vaultData,
+            exp: expiration
+        };
+        const jsonStr = JSON.stringify(payload);
         const encoder = new TextEncoder();
         const data = encoder.encode(jsonStr);
 
@@ -112,7 +121,13 @@ export class VaultCloner {
 
             const decoder = new TextDecoder();
             const jsonStr = decoder.decode(decompressedData);
-            return JSON.parse(jsonStr);
+            const payload = JSON.parse(jsonStr);
+
+            if (payload.exp && payload.exp > 0 && Date.now() > payload.exp) {
+                throw new Error('Capsule expired');
+            }
+
+            return payload.data || payload;
         } catch (e) {
             return null;
         }
